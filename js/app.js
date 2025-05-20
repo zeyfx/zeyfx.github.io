@@ -1,4 +1,48 @@
-// ... (início do app.js como antes) ...
+// Elementos DOM Globais
+const beatsContainer = document.getElementById('beats-container');
+const packsContainer = document.getElementById('packs-container');
+const audioPlayer = document.getElementById('audio-player');
+
+const playBtn = document.getElementById('play-btn');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const volumeBtn = document.getElementById('volume-btn');
+const volumeBar = document.getElementById('volume-bar');
+
+const waveformContainer = document.getElementById('waveform-container');
+const currentTimeEl = document.getElementById('current-time');
+const durationEl = document.getElementById('duration');
+const playerTitle = document.getElementById('player-title');
+const playerAuthor = document.getElementById('player-author');
+const playerCover = document.getElementById('player-cover');
+const playerSpinner = document.getElementById('player-spinner');
+const sortBeats = document.getElementById('sort-beats');
+const sortPacks = document.getElementById('sort-packs');
+const filterGenre = document.getElementById('filter-genre');
+
+const bpmSliderFilter = document.getElementById('bpm-slider-filter');
+const bpmMinFilterEl = document.getElementById('bpm-min-filter');
+const bpmMaxFilterEl = document.getElementById('bpm-max-filter');
+
+const filterToggle = document.getElementById('filter-toggle');
+const filterDropdown = document.getElementById('filter-dropdown');
+const filterOverlay = document.getElementById('filter-overlay'); // Para fechar em mobile
+const closeFilterDropdownMobileBtn = document.getElementById('close-filter-dropdown-mobile'); // Botão X no filtro mobile
+const applyFiltersMobileBtn = document.getElementById('apply-filters-mobile'); // Botão Aplicar no filtro mobile
+
+
+const mobileMenuButton = document.getElementById('mobile-menu-button');
+const mobileMenu = document.getElementById('mobile-menu');
+const searchInputs = [document.getElementById('search-beats-desktop'), document.getElementById('search-beats-mobile')];
+
+const backgroundBlurEl = document.getElementById('background-blur');
+const headerVisualEffectEl = document.querySelector('.header-visual-effect');
+const currentYearEl = document.getElementById('current-year');
+
+const detailsModal = document.getElementById('details-modal');
+const detailsModalClose = document.getElementById('details-modal-close');
+const detailsModalTitle = document.getElementById('details-modal-title');
+const detailsModalBody = document.getElementById('details-modal-body');
 
 let wavesurfer;
 let globalIsPlayingIntent = false;
@@ -12,10 +56,6 @@ let searchTimeout;
 let miniWavesurferInstances = {};
 let lastActiveMiniWaveId = null;
 let lastActiveTrackItemContainer = null;
-// let audioUnlocked = false; // Vamos remover essa flag global e confiar mais no estado do AudioContext
-
-// Função para medidas anti-vazamento (mantida como antes)
-function initAntiLeakMeasures() { /* ...código existente... */ }
 
 function init() {
     initWavesurfer();
@@ -26,44 +66,37 @@ function init() {
     setupEventListeners();
     setupModalEventListeners();
     updateCopyrightYear();
-    initAntiLeakMeasures();
 }
 
-function checkAndApplyScrollAnimation(textElement, wrapperElement) { /* ...código existente... */ }
-
-// Função para tentar resumir o AudioContext. Retorna uma Promise.
-function resumeAudioContext() {
-    if (wavesurfer && wavesurfer.backend && wavesurfer.backend.ac && wavesurfer.backend.ac.state === 'suspended') {
-        return wavesurfer.backend.ac.resume().then(() => {
-            console.log('AudioContext resumed.');
-            return true; // Resolvida como true se resumido
-        }).catch(e => {
-            console.error('Error resuming AudioContext:', e);
-            return false; // Resolvida como false se erro
-        });
+function checkAndApplyScrollAnimation(textElement, wrapperElement) {
+    if (!textElement || !wrapperElement) return;
+    textElement.classList.remove('is-scrolling');
+    textElement.style.removeProperty('--marquee-duration');
+    textElement.style.removeProperty('--wrapper-width');
+    void textElement.offsetWidth;
+    const isOverflowing = textElement.scrollWidth > wrapperElement.clientWidth;
+    if (isOverflowing) {
+        textElement.classList.add('is-scrolling');
+        const scrollableWidth = textElement.scrollWidth;
+        const pixelsPerSecond = 30;
+        let duration = Math.max(5, scrollableWidth / pixelsPerSecond);
+        duration = Math.min(duration, 40);
+        textElement.style.setProperty('--marquee-duration', `${duration}s`);
+        textElement.style.setProperty('--wrapper-width', `${wrapperElement.clientWidth}px`);
     }
-    // Se não estiver suspenso ou não existir, consideramos "desbloqueado" para fins de play
-    return Promise.resolve(true); 
 }
-
 
 function initWavesurfer() {
     if (!waveformContainer) return;
-    wavesurfer = WaveSurfer.create({ /* ... opções ... */ });
-    
-    // Listener para a primeira interação do usuário tentar desbloquear o áudio
-    const initialUserInteractionHandler = () => {
-        resumeAudioContext();
-        // Remove para não executar múltiplas vezes desnecessariamente
-        document.removeEventListener('click', initialUserInteractionHandler, {capture: true});
-        document.removeEventListener('touchstart', initialUserInteractionHandler, {capture: true});
-        document.removeEventListener('touchend', initialUserInteractionHandler, {capture: true});
-    };
-    // Usar 'capture: true' para pegar o evento antes que outros possam pará-lo
-    document.addEventListener('click', initialUserInteractionHandler, { once: true, capture: true });
-    document.addEventListener('touchstart', initialUserInteractionHandler, { once: true, capture: true });
-    document.addEventListener('touchend', initialUserInteractionHandler, { once: true, capture: true });
-
+    wavesurfer = WaveSurfer.create({
+        container: waveformContainer,
+        waveColor: getComputedStyle(document.documentElement).getPropertyValue('--waveform-bg').trim(),
+        progressColor: getComputedStyle(document.documentElement).getPropertyValue('--waveform-progress').trim(),
+        cursorColor: getComputedStyle(document.documentElement).getPropertyValue('--waveform-cursor').trim(),
+        barWidth: 3, barGap: 2.5, barRadius: 3,
+        height: waveformContainer.clientHeight || 48,
+        responsive: true, mediaControls: false, backend: 'WebAudio',
+    });
 
     wavesurfer.on('ready', () => {
         if(playerSpinner) playerSpinner.classList.add('hidden');
@@ -75,20 +108,21 @@ function initWavesurfer() {
             if (playerAuthor && playerAuthor.parentElement) setTimeout(() => checkAndApplyScrollAnimation(playerAuthor, playerAuthor.parentElement), 50);
         }
         wavesurfer.setPlaybackRate(1.0); wavesurfer.seekTo(0);
-        
-        if (globalIsPlayingIntent) {
-            // Tenta resumir o contexto ANTES de tocar, caso ainda esteja suspenso
-            resumeAudioContext().then(resumed => {
-                if (resumed) {
-                    wavesurfer.play().catch(e => console.error("Error playing on ready:", e));
-                } else {
-                    console.warn("AudioContext still suspended on ready, play deferred.");
-                }
-            });
+        if (globalIsPlayingIntent) wavesurfer.play().catch(e => console.error("Error playing on ready:", e));
+    });
+    wavesurfer.on('audioprocess', () => {
+        const currentTime = wavesurfer.getCurrentTime(); const duration = wavesurfer.getDuration();
+        if(currentTimeEl) currentTimeEl.textContent = formatTime(currentTime);
+        if (currentTrackDetails && currentTrackDetails.miniWaveId && miniWavesurferInstances[currentTrackDetails.miniWaveId] && duration > 0) {
+            miniWavesurferInstances[currentTrackDetails.miniWaveId].seekTo(currentTime / duration);
         }
     });
-    // ... (outros listeners do wavesurfer: audioprocess, seek, play, pause, finish, loading, error - mantidos como antes)
-    // ... (o código dos outros listeners 'play', 'pause', 'finish' etc. não precisa mudar significativamente aqui)
+    wavesurfer.on('seek', () => {
+        const currentTime = wavesurfer.getCurrentTime(); const duration = wavesurfer.getDuration();
+        if (currentTrackDetails && currentTrackDetails.miniWaveId && miniWavesurferInstances[currentTrackDetails.miniWaveId] && duration > 0) {
+            miniWavesurferInstances[currentTrackDetails.miniWaveId].seekTo(currentTime / duration);
+        }
+    });
     wavesurfer.on('play', () => {
         if(playBtn) { playBtn.innerHTML = '<i class="fas fa-pause"></i>'; playBtn.setAttribute('aria-label', 'Pausar'); }
         if (lastActiveTrackItemContainer) lastActiveTrackItemContainer.classList.add('is-playing');
@@ -113,7 +147,7 @@ function initWavesurfer() {
         } else {
             globalIsPlayingIntent = false;
             if(playBtn) { playBtn.innerHTML = playIconHTML; playBtn.setAttribute('aria-label', 'Tocar'); }
-            if (wavesurfer) wavesurfer.seekTo(0); // Verifica se wavesurfer existe
+            wavesurfer.seekTo(0);
             if(currentTimeEl) currentTimeEl.textContent = formatTime(0);
             if (currentTrackDetails && currentTrackDetails.miniWaveId && miniWavesurferInstances[currentTrackDetails.miniWaveId]) miniWavesurferInstances[currentTrackDetails.miniWaveId].seekTo(0);
         }
@@ -126,8 +160,6 @@ function initWavesurfer() {
         if(playerAuthor) playerAuthor.textContent = "";
         globalIsPlayingIntent = false;
     });
-
-
     if(waveformContainer) {
         waveformContainer.addEventListener('click', (e) => {
             if (!wavesurfer || !wavesurfer.getDuration()) return;
@@ -138,96 +170,6 @@ function initWavesurfer() {
     }
 }
 
-
-// ... (populateGenreFilter, initBpmFilterSlider, renderBeats, updateBeatCardPlayIcon, renderPacks, updateActiveTrackIndicator, resetPreviousActiveMiniWave - mantidos como antes)
-// ... (copie essas funções da sua versão anterior que estava funcionando bem para o layout)
-
-
-function loadAndPlay(track, playlistContext, indexInContext, contextTypeParam = 'beats') {
-    globalIsPlayingIntent = true; 
-    
-    resumeAudioContext().then(() => { // Tenta garantir que o contexto esteja ativo antes de carregar
-        resetPreviousActiveMiniWave();
-        if (lastActiveTrackItemContainer) { lastActiveTrackItemContainer.classList.remove('active-track-in-pack', 'is-playing'); lastActiveTrackItemContainer = null; }
-        if (currentContextType !== 'beats' || (currentTrackDetails && currentTrackDetails.id !== track.id)) updateBeatCardPlayIcon(null, false);
-        
-        currentTrackDetails = { ...track }; 
-        activePlaylist = playlistContext; 
-        currentTrackIndexInPlaylist = indexInContext; 
-        currentContextType = contextTypeParam;
-
-        if (currentTrackDetails.miniWaveId) lastActiveMiniWaveId = currentTrackDetails.miniWaveId;
-        if (contextTypeParam === 'pack' && currentTrackDetails.packId && currentTrackDetails.trackOriginalId !== undefined) {
-            const itemSelector = `.track-item-container[data-pack-id="${currentTrackDetails.packId}"][data-track-id="${currentTrackDetails.trackOriginalId}"]`;
-            if (packsContainer) { const newActiveItem = packsContainer.querySelector(itemSelector); if (newActiveItem) updateActiveTrackIndicator(newActiveItem); }
-        }
-        if(audioPlayer) audioPlayer.classList.remove('hidden');
-        if(playerTitle) { playerTitle.textContent = currentTrackDetails.title || "Título Desconhecido"; if (playerTitle.parentElement) setTimeout(() => checkAndApplyScrollAnimation(playerTitle, playerTitle.parentElement), 50); }
-        if(playerAuthor) { playerAuthor.textContent = (Array.isArray(currentTrackDetails.author) ? currentTrackDetails.author.join(', ') : currentTrackDetails.author) || ""; if (playerAuthor.parentElement) setTimeout(() => checkAndApplyScrollAnimation(playerAuthor, playerAuthor.parentElement), 50); }
-        if(playerCover) playerCover.src = currentTrackDetails.cover || 'static/cover/placeholder-60x60.png';
-        if(currentTimeEl) currentTimeEl.textContent = formatTime(0); if(durationEl) durationEl.textContent = formatTime(0);
-        const coverUrl = currentTrackDetails.cover || 'static/cover/placeholder-60x60.png';
-        if(backgroundBlurEl) { backgroundBlurEl.style.backgroundImage = `url(${coverUrl})`; backgroundBlurEl.style.opacity = '1'; }
-        if (headerVisualEffectEl) { headerVisualEffectEl.style.backgroundImage = `url(${coverUrl})`; headerVisualEffectEl.style.opacity = '0.3'; }
-        if(playerSpinner) playerSpinner.classList.remove('hidden');
-        if(playBtn) { playBtn.innerHTML = '<i class="fas fa-pause"></i>'; playBtn.setAttribute('aria-label', 'Pausar'); }
-        if (contextTypeParam === 'beats') updateBeatCardPlayIcon(currentTrackDetails.id, true);
-        
-        if(wavesurfer) { 
-            wavesurfer.stop(); 
-            wavesurfer.load(currentTrackDetails.file); // o evento 'ready' tentará o play
-        }
-    });
-}
-
-function togglePlayPause() {
-    if (!wavesurfer) return;
-
-    resumeAudioContext().then(resumed => {
-        if (!resumed && wavesurfer.backend.ac.state === 'suspended') {
-            console.warn("AudioContext ainda suspenso após tentativa em togglePlayPause. Interaja com a página.");
-            // Poderia-se tentar forçar um 'click' programático em um elemento para desbloquear,
-            // mas isso é hacky. A melhor abordagem é o usuário interagir.
-            // Ou, se for o primeiro clique, a lógica de 'desbloqueio' já deveria ter sido chamada.
-            // Se o usuário clicou no play e o contexto ainda está suspenso, algo está errado
-            // ou o navegador é muito restritivo.
-            return; 
-        }
-
-        if (!wavesurfer.getMediaElement() || !wavesurfer.getDuration()) {
-            if (activePlaylist.length > 0) {
-                const playIndex = (currentTrackIndexInPlaylist >= 0 && currentTrackIndexInPlaylist < activePlaylist.length)
-                                  ? currentTrackIndexInPlaylist : 0;
-                globalIsPlayingIntent = true;
-                loadAndPlay(activePlaylist[playIndex], activePlaylist, playIndex, currentContextType);
-            }
-            return;
-        }
-
-        if (wavesurfer.isPlaying()) {
-            globalIsPlayingIntent = false;
-            wavesurfer.pause();
-        } else {
-            globalIsPlayingIntent = true;
-            // Se o wavesurfer estiver pronto (decodificado), ele deve tocar
-            // Se não estiver pronto ainda, o 'ready' event cuidará disso se globalIsPlayingIntent for true
-            if (wavesurfer.isReady) { // Verifica se o áudio está decodificado
-                 wavesurfer.play().catch(e => console.error("Error on togglePlayPause - play:", e));
-            } else {
-                console.log("Play intentado, mas wavesurfer não está pronto. 'ready' event deve tocar.");
-                // Se por algum motivo o 'ready' não for disparado novamente, pode ser necessário um wavesurfer.load() aqui
-                // mas normalmente não é o caso se já houve um load anterior.
-            }
-        }
-    });
-}
-
-
-// ... (playNext, playPrev, toggleMutePlayer, updateVolume, updateVolumeIcon - mantidos como antes)
-// ... (formatTime, formatPrice, parseDate, sortList, handleSearch, updateCopyrightYear, showItemDetails, setupModalEventListeners, closeFilterDropdownAction, setupEventListeners - mantidos como antes)
-
-// --- COLE O RESTANTE DAS FUNÇÕES (populateGenreFilter, initBpmFilterSlider, renderBeats, updateBeatCardPlayIcon, renderPacks, etc.) DA SUA VERSÃO ANTERIOR FUNCIONAL AQUI ---
-// --- Certifique-se de que as funções abaixo desta linha são as mesmas da sua última versão funcional, com as verificações de null ---
 function populateGenreFilter() {
     if (!beatData || !beatData.beats) return;
     const genres = new Set(beatData.beats.flatMap(beat => Array.isArray(beat.genre) ? beat.genre : [beat.genre]).filter(g => g));
@@ -275,6 +217,7 @@ function initBpmFilterSlider() {
             else { maxValue = Math.max(value, minValue + 5); }
             updateVisuals();
         };
+
         handle.addEventListener('mousedown', (e) => {
             e.preventDefault(); document.body.style.cursor = 'grabbing';
             const onMouseMove = (moveEvent) => handleDrag(moveEvent.clientX);
@@ -535,6 +478,41 @@ function resetPreviousActiveMiniWave() {
     lastActiveMiniWaveId = null;
 }
 
+function loadAndPlay(track, playlistContext, indexInContext, contextTypeParam = 'beats') {
+    globalIsPlayingIntent = true; resetPreviousActiveMiniWave();
+    if (lastActiveTrackItemContainer) { lastActiveTrackItemContainer.classList.remove('active-track-in-pack', 'is-playing'); lastActiveTrackItemContainer = null; }
+    if (currentContextType !== 'beats' || (currentTrackDetails && currentTrackDetails.id !== track.id)) updateBeatCardPlayIcon(null, false);
+    currentTrackDetails = { ...track }; activePlaylist = playlistContext; currentTrackIndexInPlaylist = indexInContext; currentContextType = contextTypeParam;
+    if (currentTrackDetails.miniWaveId) lastActiveMiniWaveId = currentTrackDetails.miniWaveId;
+    if (contextTypeParam === 'pack' && currentTrackDetails.packId && currentTrackDetails.trackOriginalId !== undefined) {
+        const itemSelector = `.track-item-container[data-pack-id="${currentTrackDetails.packId}"][data-track-id="${currentTrackDetails.trackOriginalId}"]`;
+        if (packsContainer) { const newActiveItem = packsContainer.querySelector(itemSelector); if (newActiveItem) updateActiveTrackIndicator(newActiveItem); }
+    }
+    if(audioPlayer) audioPlayer.classList.remove('hidden');
+    if(playerTitle) { playerTitle.textContent = currentTrackDetails.title || "Título Desconhecido"; if (playerTitle.parentElement) setTimeout(() => checkAndApplyScrollAnimation(playerTitle, playerTitle.parentElement), 50); }
+    if(playerAuthor) { playerAuthor.textContent = (Array.isArray(currentTrackDetails.author) ? currentTrackDetails.author.join(', ') : currentTrackDetails.author) || ""; if (playerAuthor.parentElement) setTimeout(() => checkAndApplyScrollAnimation(playerAuthor, playerAuthor.parentElement), 50); }
+    if(playerCover) playerCover.src = currentTrackDetails.cover || 'static/cover/placeholder-60x60.png';
+    if(currentTimeEl) currentTimeEl.textContent = formatTime(0); if(durationEl) durationEl.textContent = formatTime(0);
+    const coverUrl = currentTrackDetails.cover || 'static/cover/placeholder-60x60.png';
+    if(backgroundBlurEl) { backgroundBlurEl.style.backgroundImage = `url(${coverUrl})`; backgroundBlurEl.style.opacity = '1'; }
+    if (headerVisualEffectEl) { headerVisualEffectEl.style.backgroundImage = `url(${coverUrl})`; headerVisualEffectEl.style.opacity = '0.3'; }
+    if(playerSpinner) playerSpinner.classList.remove('hidden');
+    if(playBtn) { playBtn.innerHTML = '<i class="fas fa-pause"></i>'; playBtn.setAttribute('aria-label', 'Pausar'); }
+    if (contextTypeParam === 'beats') updateBeatCardPlayIcon(currentTrackDetails.id, true);
+    if(wavesurfer) { wavesurfer.stop(); wavesurfer.load(currentTrackDetails.file); }
+}
+
+function togglePlayPause() {
+    if (!wavesurfer || !wavesurfer.getMediaElement() || !wavesurfer.getDuration()) {
+        if (activePlaylist.length > 0) {
+            const playIndex = (currentTrackIndexInPlaylist >= 0 && currentTrackIndexInPlaylist < activePlaylist.length) ? currentTrackIndexInPlaylist : 0;
+            globalIsPlayingIntent = true; loadAndPlay(activePlaylist[playIndex], activePlaylist, playIndex, currentContextType);
+        } return;
+    }
+    if (wavesurfer.isPlaying()) { globalIsPlayingIntent = false; wavesurfer.pause(); }
+    else { globalIsPlayingIntent = true; wavesurfer.play().catch(e => console.error("Error attempting to resume playback:", e)); }
+}
+
 function playNext() {
     if (activePlaylist.length === 0) return;
     currentTrackIndexInPlaylist = (currentTrackIndexInPlaylist + 1) % activePlaylist.length;
@@ -625,7 +603,7 @@ function setupModalEventListeners() {
     }
 }
 
-function closeFilterDropdownAction() {
+function closeFilterDropdown() { // Função auxiliar para fechar o dropdown de filtro
     if (filterDropdown && !filterDropdown.classList.contains('hidden')) {
         filterDropdown.classList.add('hidden');
         if (filterToggle) filterToggle.setAttribute('aria-expanded', 'false');
@@ -650,20 +628,21 @@ function setupEventListeners() {
             if(filterDropdown) {
                 const isHidden = filterDropdown.classList.toggle('hidden');
                 filterToggle.setAttribute('aria-expanded', !isHidden);
-                if (filterOverlay && window.innerWidth < 768) { 
+                if (filterOverlay && window.innerWidth < 768) { // md breakpoint do Tailwind é 768px
                     filterOverlay.classList.toggle('hidden', isHidden);
                 }
             }
         });
     }
-    if (filterOverlay) filterOverlay.addEventListener('click', closeFilterDropdownAction);
-    if (closeFilterDropdownMobileBtn) closeFilterDropdownMobileBtn.addEventListener('click', closeFilterDropdownAction);
-    if (applyFiltersMobileBtn) applyFiltersMobileBtn.addEventListener('click', closeFilterDropdownAction);
+    if (filterOverlay) filterOverlay.addEventListener('click', closeFilterDropdown);
+    if (closeFilterDropdownMobileBtn) closeFilterDropdownMobileBtn.addEventListener('click', closeFilterDropdown);
+    if (applyFiltersMobileBtn) applyFiltersMobileBtn.addEventListener('click', closeFilterDropdown); // Apenas fecha, os filtros são aplicados onChange
 
-    document.addEventListener('click', (e) => { 
+
+    document.addEventListener('click', (e) => { // Para fechar o dropdown desktop ao clicar fora
         if (window.innerWidth >= 768 && filterDropdown && !filterDropdown.classList.contains('hidden') &&
             filterToggle && !filterToggle.contains(e.target) && !filterDropdown.contains(e.target)) {
-            closeFilterDropdownAction();
+            closeFilterDropdown();
         }
     });
 
@@ -687,11 +666,9 @@ function setupEventListeners() {
             if(playerTitle && playerTitle.parentElement) setTimeout(() => checkAndApplyScrollAnimation(playerTitle, playerTitle.parentElement), 50);
             if(playerAuthor && playerAuthor.parentElement) setTimeout(() => checkAndApplyScrollAnimation(playerAuthor, playerAuthor.parentElement), 50);
         }
+        // Se o filtro mobile estiver aberto e a tela for redimensionada para desktop, esconde o overlay
         if (window.innerWidth >= 768 && filterOverlay && !filterOverlay.classList.contains('hidden')) {
             filterOverlay.classList.add('hidden');
-        }
-         if (wavesurfer && waveformContainer) { 
-           wavesurfer.setOptions({ height: waveformContainer.clientHeight || 48 });
         }
     });
 }
