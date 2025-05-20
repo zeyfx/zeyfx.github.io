@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clube Vortex - Catálogo de Beats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="min-h-screen flex flex-col transition-colors duration-200 font-inter">
+    <!-- Blurred Background (dinâmico com a capa da música) -->
+    <div id="background-blur"></div>
+
+    <!-- Cabeçalho -->
+    <header class="sticky top-0 z-50 bg-bg-primary/80 backdrop-blur-md border-b border-border-color">
+        <div class="header-visual-effect"></div>
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between relative z-10">
+            <div class="flex items-center space-x-4">
+                <a href="#" class="text-2xl font-bold">
+                    <span class="text-primary">ZEY</span><span class="text-text-secondary">CATALOGUE</span>
+                </a>
+                <nav class="hidden md:flex space-x-6 text-sm font-medium">
+                    <a href="#" class="text-text-secondary hover:text-primary transition">Beats</a>
+                    <a href="#packs" class="text-text-secondary hover:text-primary transition">Pacotes</a>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="relative hidden md:block">
+                    <input type="text" id="search-beats-desktop" placeholder="Buscar beats..." class="pl-10 pr-4 py-2 rounded-full border border-border-color bg-bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all w-64 text-sm">
+                    <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                </div>
+                <button id="mobile-menu-button" aria-label="Abrir menu de navegação" class="md:hidden p-2 rounded-lg hover:bg-bg-secondary transition text-text-secondary hover:text-primary">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden bg-bg-secondary border-b border-border-color px-4 py-3">
+            <nav class="flex flex-col space-y-3">
+                <a href="#" class="text-text-secondary hover:text-primary transition block py-1">Beats</a>
+                <a href="#packs" class="text-text-secondary hover:text-primary transition block py-1">Pacotes</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="md:hidden px-4 py-3 border-b border-border-color bg-bg-primary">
+        <div class="relative">
+            <input type="text" id="search-beats-mobile" placeholder="Buscar beats..." class="pl-10 pr-4 py-2.5 rounded-full border border-border-color bg-bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all w-full text-sm">
+            <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
+        </div>
+    </div>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <section id="beats" class="mb-16">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+                <h2 class="text-3xl font-bold text-text-primary">Beats Recentes</h2>
+                <div class="filter-menu relative"> <!-- Removido flex items-center space-x-2 daqui -->
+                    <button id="filter-toggle" aria-label="Abrir filtros" class="flex items-center space-x-2 bg-bg-secondary border border-border-color rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-secondary hover:border-primary transition-colors">
+                        <i class="fas fa-sliders-h text-primary"></i>
+                        <span>Filtros</span>
+                    </button>
+                    <div id="filter-overlay" class="filter-overlay hidden md:hidden"></div> 
+                    <div id="filter-dropdown" class="filter-dropdown hidden">
+                        <div class="flex justify-between items-center mb-4 md:hidden"> <!-- Cabeçalho do filtro mobile -->
+                            <h3 class="text-lg font-medium text-text-primary">Filtros</h3>
+                            <button id="close-filter-dropdown-mobile" class="text-text-muted hover:text-primary text-2xl">×</button>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-xs font-medium text-gray-400 mb-1.5">Ordenar por</label>
+                            <select id="sort-beats" aria-label="Ordenar beats por" class="w-full bg-bg-primary border border-border-color rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-white appearance-none custom-select">
+                                <option value="newest">Mais Recentes</option>
+                                <option value="oldest">Mais Antigos</option>
+                                <option value="price-asc">Preço (Menor para Maior)</option>
+                                <option value="price-desc">Preço (Maior para Menor)</option>
+                                <option value="discount-desc">Desconto (Maior para Menor)</option>
+                                <option value="discount-asc">Desconto (Menor para Maior)</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-xs font-medium text-gray-400 mb-1.5">Filtrar por Gênero</label>
+                            <select id="filter-genre" aria-label="Filtrar beats por gênero" class="w-full bg-bg-primary border border-border-color rounded-md py-2 pl-3 pr-8 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-primary appearance-none custom-select">
+                                <option value="all">Todos os Gêneros</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1.5">Filtrar por BPM</label>
+                            <div id="bpm-slider-filter" class="mb-3">
+                                <div class="slider-range-filter"></div>
+                                <div class="slider-handle-filter" tabindex="0" aria-label="Valor mínimo de BPM"></div>
+                                <div class="slider-handle-filter" tabindex="0" aria-label="Valor máximo de BPM"></div>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-400">
+                                <span id="bpm-min-filter">40 BPM</span>
+                                <span id="bpm-max-filter">200 BPM</span>
+                            </div>
+                        </div>
+                        <button id="apply-filters-mobile" class="w-full btn btn-primary mt-6 md:hidden">Aplicar Filtros</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="beats-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Os cards de beats serão inseridos aqui pelo JavaScript -->
+            </div>
+        </section>
+
+        <section id="packs" class="mb-12">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+                <h2 class="text-3xl font-bold text-text-primary">Pacotes</h2>
+                <div class="relative">
+                    <select id="sort-packs" aria-label="Ordenar pacotes por" class="appearance-none bg-bg-secondary border border-border-color rounded-lg py-2 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-text-secondary custom-select">
+                        <option value="price-asc">Preço (Menor para Maior)</option>
+                        <option value="price-desc">Preço (Maior para Menor)</option>
+                        <option value="discount">Desconto</option>
+                    </select>
+                </div>
+            </div>
+            <div id="packs-container" class="grid grid-cols-1 gap-8">
+                <!-- Os cards de pacotes serão inseridos aqui pelo JavaScript -->
+            </div>
+        </section>
+    </main>
+
+    <div id="audio-player" class="hidden fixed bottom-0 left-0 right-0 bg-bg-primary/90 backdrop-blur-lg border-t border-border-color player-shadow-compact fade-in">
+        <div class="container mx-auto px-2 sm:px-4 py-2"> 
+            <div class="flex flex-wrap md:flex-nowrap items-center gap-x-3 md:gap-x-4 lg:gap-x-6 gap-y-2">
+                <div id="player-info-column" class="flex items-center w-full md:w-auto md:min-w-[180px] md:max-w-[220px] lg:max-w-[280px] shrink-0 order-1">
+                    <div class="relative shrink-0 mr-2 sm:mr-3">
+                        <img id="player-cover" src="static/cover/placeholder-60x60.png" alt="Capa da música atual" class="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-md object-cover shadow-md">
+                        <div id="player-spinner" class="absolute inset-0 flex items-center justify-center hidden bg-black bg-opacity-50 rounded-md">
+                            <i class="fas fa-spinner rotate text-primary text-xl sm:text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="overflow-hidden flex-grow min-w-0"> 
+                        <div class="player-text-scroll-wrapper">
+                            <div id="player-title" class="player-text-scroll font-semibold text-sm text-text-primary whitespace-nowrap">Carregando...</div>
+                        </div>
+                        <div class="player-text-scroll-wrapper">
+                            <div id="player-author" class="player-text-scroll text-xs text-gray-400 whitespace-nowrap"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="player-center-column" class="flex flex-col items-center w-full md:flex-grow order-3 md:order-2 mt-1 md:mt-0 max-w-xl mx-auto"> 
+                    <div class="flex justify-center items-center space-x-4 sm:space-x-5 w-full mb-1">
+                        <button id="prev-btn" aria-label="Faixa anterior" class="text-gray-400 hover:text-primary transition text-lg sm:text-xl p-1">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button id="play-btn" aria-label="Tocar ou pausar" class="bg-primary text-white rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center hover:bg-primary-dark transition text-lg sm:text-xl shadow-md hover:shadow-primary/50">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button id="next-btn" aria-label="Próxima faixa" class="text-gray-400 hover:text-primary transition text-lg sm:text-xl p-1">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                    </div>
+                    <div class="w-full px-1">
+                        <div id="waveform-container" class="h-10 sm:h-12 w-full cursor-pointer"></div>
+                        <div class="flex justify-between text-[0.65rem] sm:text-xs text-gray-400 mt-0.5">
+                            <span id="current-time">0:00</span>
+                            <span id="duration">0:00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="player-volume-column" class="flex justify-center items-center w-auto order-2 md:order-3 md:ml-auto md:pr-2">
+                    <div class="flex items-center space-x-1 sm:space-x-2">
+                        <button id="volume-btn" aria-label="Ativar ou desativar mudo" class="text-gray-400 hover:text-primary transition text-base p-1">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                        <!-- Slider de volume oculto em telas menores que 'sm' -->
+                        <div id="volume-bar-container" class="hidden sm:block w-20 sm:w-24"> 
+                            <input type="range" id="volume-bar" aria-label="Controle de volume" class="w-full custom-range-slider" min="0" max="100" value="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-bg-secondary border-t border-border-color py-10 text-sm">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-primary mb-3">Clube Vortex</h3>
+                    <p class="text-gray-400 leading-relaxed">Beats e Pacotes premium para criadores de todo o mundo. Eleve seu som com nosso catálogo exclusivo.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-primary mb-3">Navegação</h3>
+                    <ul class="space-y-1.5">
+                        <li><a href="#" class="text-text-secondary hover:text-primary transition">Beats</a></li>
+                        <li><a href="#packs" class="text-text-secondary hover:text-primary transition">Pacotes</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-primary mb-3">Conecte-se</h3>
+                    <div class="flex space-x-3 mb-3">
+                        <a href="https://www.instagram.com/zeyonthebeat" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-primary transition text-lg" aria-label="Instagram ZeyOnTheBeat"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.tiktok.com/@zeyonthebeat" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-primary transition text-lg" aria-label="TikTok ZeyOnTheBeat"><i class="fab fa-tiktok"></i></a>
+                        <a href="https://soundcloud.com/zeyonthebeat" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-primary transition text-lg" aria-label="SoundCloud ZeyOnTheBeat"><i class="fab fa-soundcloud"></i></a>
+                        <a href="https://open.spotify.com/intl-pt/artist/1CCrKqKQ2g8PKUCJnjqUQY?si=a361610158e84532" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-primary transition text-lg" aria-label="Spotify ZeyOnTheBeat"><i class="fab fa-spotify"></i></a>
+                        <a href="mailto:zeyonthebeat@gmail.com" class="text-gray-400 hover:text-primary transition text-lg" aria-label="Enviar email para ZeyOnTheBeat"><i class="fa fa-envelope"></i></a>
+                    </div>
+                    <a href="mailto:zeyonthebeat@gmail.com" class="text-gray-400 hover:text-primary transition">zeyonthebeat@gmail.com</a>
+                </div>
+                 <div>
+                    <h3 class="text-lg font-semibold text-primary mb-3">Legal</h3>
+                     <ul class="space-y-1.5">
+                        <li><a href="#" class="text-gray-400 hover:text-primary transition">Termos de Serviço</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-primary transition">Política de Privacidade</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-border-color mt-8 pt-6 text-center text-gray-500">
+                <p>© <span id="current-year">2025</span> Clube Vortex. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div id="details-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-[60] hidden" role="dialog" aria-modal="true" aria-labelledby="details-modal-title">
+        <div id="details-modal-content" class="bg-bg-secondary p-6 rounded-lg shadow-xl max-w-md w-full relative">
+            <button id="details-modal-close" aria-label="Fechar modal de detalhes" class="absolute top-3 right-3 text-text-muted hover:text-primary text-2xl">×</button>
+            <h3 id="details-modal-title" class="text-xl font-bold text-primary mb-3"></h3>
+            <div id="details-modal-body" class="text-sm text-text-secondary space-y-2">
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
