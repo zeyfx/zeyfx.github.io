@@ -26,10 +26,9 @@ const bpmMaxFilterEl = document.getElementById('bpm-max-filter');
 
 const filterToggle = document.getElementById('filter-toggle');
 const filterDropdown = document.getElementById('filter-dropdown');
-const filterOverlay = document.getElementById('filter-overlay'); // Para fechar em mobile
-const closeFilterDropdownMobileBtn = document.getElementById('close-filter-dropdown-mobile'); // Botão X no filtro mobile
-const applyFiltersMobileBtn = document.getElementById('apply-filters-mobile'); // Botão Aplicar no filtro mobile
-
+const filterOverlay = document.getElementById('filter-overlay');
+const closeFilterDropdownMobileBtn = document.getElementById('close-filter-dropdown-mobile');
+const applyFiltersMobileBtn = document.getElementById('apply-filters-mobile');
 
 const mobileMenuButton = document.getElementById('mobile-menu-button');
 const mobileMenu = document.getElementById('mobile-menu');
@@ -56,6 +55,57 @@ let searchTimeout;
 let miniWavesurferInstances = {};
 let lastActiveMiniWaveId = null;
 let lastActiveTrackItemContainer = null;
+let audioUnlocked = false;
+
+// Função para medidas anti-vazamento
+function initAntiLeakMeasures() {
+    // 1. Desabilitar clique com o botão direito
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    // 2. Desabilitar seleção de texto (exceto em inputs e textareas)
+    document.addEventListener('selectstart', function(e) {
+        const allowedTags = ['INPUT', 'TEXTAREA'];
+        const targetTagName = e.target.tagName.toUpperCase();
+        let parent = e.target;
+        let allowSelect = false;
+        while (parent) {
+            if (allowedTags.includes(parent.tagName.toUpperCase())) {
+                if (parent.tagName.toUpperCase() === 'INPUT') {
+                    const inputType = parent.type.toLowerCase();
+                    if (['text', 'search', 'password', 'email', 'url', 'tel', 'number'].includes(inputType)) {
+                        allowSelect = true;
+                    }
+                } else { 
+                    allowSelect = true;
+                }
+                break;
+            }
+            parent = parent.parentElement;
+        }
+        if (!allowSelect) {
+            e.preventDefault();
+        }
+    });
+
+    // 3. Desabilitar certas teclas e combinações de atalho
+    document.addEventListener('keydown', function(e) {
+        if (e.key === "F12" || e.keyCode === 123) e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.keyCode === 67)) e.preventDefault();
+        if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) e.preventDefault();
+        if (e.ctrlKey && (e.key === 'S' || e.key === 's' || e.keyCode === 83)) e.preventDefault();
+        if (e.metaKey && e.altKey && (e.key === 'i' || e.keyCode === 73)) e.preventDefault();
+        if (e.metaKey && e.altKey && (e.key === 'j' || e.keyCode === 74)) e.preventDefault();
+        if (e.metaKey && e.altKey && (e.key === 'c' || e.keyCode === 67)) e.preventDefault();
+        if (e.metaKey && (e.key === 'u' || e.keyCode === 85)) e.preventDefault();
+        if (e.metaKey && (e.key === 's' || e.keyCode === 83)) e.preventDefault();
+    });
+    console.log("Medidas anti-vazamento básicas inicializadas.");
+}
+
 
 function init() {
     initWavesurfer();
@@ -66,6 +116,7 @@ function init() {
     setupEventListeners();
     setupModalEventListeners();
     updateCopyrightYear();
+    initAntiLeakMeasures(); // Chama as medidas de segurança
 }
 
 function checkAndApplyScrollAnimation(textElement, wrapperElement) {
@@ -86,6 +137,18 @@ function checkAndApplyScrollAnimation(textElement, wrapperElement) {
     }
 }
 
+function unlockAudioContext() {
+    if (wavesurfer && wavesurfer.backend && wavesurfer.backend.ac && wavesurfer.backend.ac.state === 'suspended') {
+        wavesurfer.backend.ac.resume().then(() => {
+            console.log('AudioContext resumed on user interaction.');
+            audioUnlocked = true;
+        }).catch(e => console.error('Error resuming AudioContext:', e));
+    } else if (wavesurfer && wavesurfer.backend && wavesurfer.backend.ac) {
+        audioUnlocked = true;
+    }
+    // Os listeners são { once: true }, então se auto-removem.
+}
+
 function initWavesurfer() {
     if (!waveformContainer) return;
     wavesurfer = WaveSurfer.create({
@@ -97,6 +160,10 @@ function initWavesurfer() {
         height: waveformContainer.clientHeight || 48,
         responsive: true, mediaControls: false, backend: 'WebAudio',
     });
+    
+    document.addEventListener('click', unlockAudioContext, { once: true });
+    document.addEventListener('touchstart', unlockAudioContext, { once: true });
+    document.addEventListener('touchend', unlockAudioContext, { once: true });
 
     wavesurfer.on('ready', () => {
         if(playerSpinner) playerSpinner.classList.add('hidden');
@@ -108,7 +175,11 @@ function initWavesurfer() {
             if (playerAuthor && playerAuthor.parentElement) setTimeout(() => checkAndApplyScrollAnimation(playerAuthor, playerAuthor.parentElement), 50);
         }
         wavesurfer.setPlaybackRate(1.0); wavesurfer.seekTo(0);
-        if (globalIsPlayingIntent) wavesurfer.play().catch(e => console.error("Error playing on ready:", e));
+        if (globalIsPlayingIntent && audioUnlocked) {
+             wavesurfer.play().catch(e => console.error("Error playing on ready (audio might still be locked):", e));
+        } else if (globalIsPlayingIntent && !audioUnlocked) {
+            console.log("Play intent on ready, but audio not yet unlocked. Will try on next user interaction.");
+        }
     });
     wavesurfer.on('audioprocess', () => {
         const currentTime = wavesurfer.getCurrentTime(); const duration = wavesurfer.getDuration();
@@ -217,7 +288,6 @@ function initBpmFilterSlider() {
             else { maxValue = Math.max(value, minValue + 5); }
             updateVisuals();
         };
-
         handle.addEventListener('mousedown', (e) => {
             e.preventDefault(); document.body.style.cursor = 'grabbing';
             const onMouseMove = (moveEvent) => handleDrag(moveEvent.clientX);
@@ -479,7 +549,9 @@ function resetPreviousActiveMiniWave() {
 }
 
 function loadAndPlay(track, playlistContext, indexInContext, contextTypeParam = 'beats') {
-    globalIsPlayingIntent = true; resetPreviousActiveMiniWave();
+    if (!audioUnlocked) unlockAudioContext();
+    globalIsPlayingIntent = true; 
+    resetPreviousActiveMiniWave();
     if (lastActiveTrackItemContainer) { lastActiveTrackItemContainer.classList.remove('active-track-in-pack', 'is-playing'); lastActiveTrackItemContainer = null; }
     if (currentContextType !== 'beats' || (currentTrackDetails && currentTrackDetails.id !== track.id)) updateBeatCardPlayIcon(null, false);
     currentTrackDetails = { ...track }; activePlaylist = playlistContext; currentTrackIndexInPlaylist = indexInContext; currentContextType = contextTypeParam;
@@ -503,14 +575,27 @@ function loadAndPlay(track, playlistContext, indexInContext, contextTypeParam = 
 }
 
 function togglePlayPause() {
-    if (!wavesurfer || !wavesurfer.getMediaElement() || !wavesurfer.getDuration()) {
+    if (!wavesurfer) return;
+    if (!audioUnlocked) {
+        unlockAudioContext();
+        if (!wavesurfer.getDuration()) {
+             if (activePlaylist.length > 0) {
+                const playIndex = (currentTrackIndexInPlaylist >= 0 && currentTrackIndexInPlaylist < activePlaylist.length) ? currentTrackIndexInPlaylist : 0;
+                globalIsPlayingIntent = true; loadAndPlay(activePlaylist[playIndex], activePlaylist, playIndex, currentContextType);
+            } return;
+        }
+    }
+    if (wavesurfer.backend.ac && wavesurfer.backend.ac.state === 'suspended') {
+        console.warn("AudioContext ainda suspenso. Requer mais interação do usuário."); return;
+    }
+    if (!wavesurfer.getMediaElement() || !wavesurfer.getDuration()) {
         if (activePlaylist.length > 0) {
             const playIndex = (currentTrackIndexInPlaylist >= 0 && currentTrackIndexInPlaylist < activePlaylist.length) ? currentTrackIndexInPlaylist : 0;
             globalIsPlayingIntent = true; loadAndPlay(activePlaylist[playIndex], activePlaylist, playIndex, currentContextType);
         } return;
     }
     if (wavesurfer.isPlaying()) { globalIsPlayingIntent = false; wavesurfer.pause(); }
-    else { globalIsPlayingIntent = true; wavesurfer.play().catch(e => console.error("Error attempting to resume playback:", e)); }
+    else { globalIsPlayingIntent = true; wavesurfer.play().catch(e => console.error("Error on togglePlayPause - play:", e)); }
 }
 
 function playNext() {
@@ -603,7 +688,7 @@ function setupModalEventListeners() {
     }
 }
 
-function closeFilterDropdown() { // Função auxiliar para fechar o dropdown de filtro
+function closeFilterDropdownAction() {
     if (filterDropdown && !filterDropdown.classList.contains('hidden')) {
         filterDropdown.classList.add('hidden');
         if (filterToggle) filterToggle.setAttribute('aria-expanded', 'false');
@@ -628,21 +713,20 @@ function setupEventListeners() {
             if(filterDropdown) {
                 const isHidden = filterDropdown.classList.toggle('hidden');
                 filterToggle.setAttribute('aria-expanded', !isHidden);
-                if (filterOverlay && window.innerWidth < 768) { // md breakpoint do Tailwind é 768px
+                if (filterOverlay && window.innerWidth < 768) { 
                     filterOverlay.classList.toggle('hidden', isHidden);
                 }
             }
         });
     }
-    if (filterOverlay) filterOverlay.addEventListener('click', closeFilterDropdown);
-    if (closeFilterDropdownMobileBtn) closeFilterDropdownMobileBtn.addEventListener('click', closeFilterDropdown);
-    if (applyFiltersMobileBtn) applyFiltersMobileBtn.addEventListener('click', closeFilterDropdown); // Apenas fecha, os filtros são aplicados onChange
+    if (filterOverlay) filterOverlay.addEventListener('click', closeFilterDropdownAction);
+    if (closeFilterDropdownMobileBtn) closeFilterDropdownMobileBtn.addEventListener('click', closeFilterDropdownAction);
+    if (applyFiltersMobileBtn) applyFiltersMobileBtn.addEventListener('click', closeFilterDropdownAction);
 
-
-    document.addEventListener('click', (e) => { // Para fechar o dropdown desktop ao clicar fora
+    document.addEventListener('click', (e) => { 
         if (window.innerWidth >= 768 && filterDropdown && !filterDropdown.classList.contains('hidden') &&
             filterToggle && !filterToggle.contains(e.target) && !filterDropdown.contains(e.target)) {
-            closeFilterDropdown();
+            closeFilterDropdownAction();
         }
     });
 
@@ -666,9 +750,11 @@ function setupEventListeners() {
             if(playerTitle && playerTitle.parentElement) setTimeout(() => checkAndApplyScrollAnimation(playerTitle, playerTitle.parentElement), 50);
             if(playerAuthor && playerAuthor.parentElement) setTimeout(() => checkAndApplyScrollAnimation(playerAuthor, playerAuthor.parentElement), 50);
         }
-        // Se o filtro mobile estiver aberto e a tela for redimensionada para desktop, esconde o overlay
         if (window.innerWidth >= 768 && filterOverlay && !filterOverlay.classList.contains('hidden')) {
             filterOverlay.classList.add('hidden');
+        }
+         if (wavesurfer && waveformContainer) { 
+           wavesurfer.setOptions({ height: waveformContainer.clientHeight || 48 });
         }
     });
 }
