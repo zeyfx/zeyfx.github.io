@@ -103,7 +103,7 @@ const beatData = {
                 "hard",
                 "punch"
             ],
-            "cover": "static/cover/",
+            "cover": "static/cover/Phantom.png",
             "price": 599.99,
             "discount": 70,
             "exclusive": true,
@@ -289,7 +289,7 @@ const beatData = {
             "id": "packab93ecfb",
             "name": "Samples 03.05",
             "author": "zey",
-            "description": "10 Samples referentes ao mês de Março, com licença de uso NÃO exclusivo e stems.",
+            "description": "Samples de Março, com licença de uso NÃO exclusivo e stems inclusos.",
             "price": 99.99,
             "discount": 50,
             "cover": "",
@@ -297,52 +297,52 @@ const beatData = {
                 {
                     "title": "Come Over 130 BPM C# Min (Energetic, Synth, Vocal Chop)",
                     "id": "trk_packab93ecfb_15d570f7",
-                    "file": "static/pack/packab93ecfb/_zeyonthebeat_-_Come_Over_130_BPM_C__Min__Energetic__Synth__Vocal_Chop_.mp3"
+                    "file": "static/pack/packab93ecfb/Come over.mp3"
                 },
                 {
                     "title": "Drifiting Away 117 B Min (Ambient, RNB, Synth, Vocals)",
                     "id": "trk_packab93ecfb_cfa19a1d",
-                    "file": "static/pack/packab93ecfb/_zeyonthebeat_-_Drifiting_Away_117_B_Min__Ambient__RNB__Synth__Vocals_.mp3"
+                    "file": "static/pack/packab93ecfb/Drifiting Away.mp3"
                 },
                 {
                     "title": "Espanha 110 BPM C# Min (Latin, Downtempo, Ethinic)",
                     "id": "trk_packab93ecfb_84e5e1ee",
-                    "file": "static/pack/packab93ecfb/_zeyonthebeat_-_Espanha_110_BPM_C__Min__Latin__Downtempo__Ethinic_.mp3"
+                    "file": "static/pack/packab93ecfb/Espanha.mp3"
                 },
                 {
                     "title": "Experiencia 100 BPM G Min (Ambient, Chillwave, Experimental)",
                     "id": "trk_packab93ecfb_899c12dc",
-                    "file": "static/pack/packab93ecfb/_zeyonthebeat_-_Experiencia_100_BPM_G_Min__Ambient__Chillwave__Experimental_.mp3"
+                    "file": "static/pack/packab93ecfb/Experiencia.mp3"
                 },
                 {
                     "title": "Jazzy 92 BPM A Min (Ambient, Blues, Grovy)",
                     "id": "trk_packab93ecfb_ae7b26cb",
-                    "file": "static/pack/packab93ecfb/_zeyonthebeat_-_Jazzy_92_BPM_A_Min__Ambient__Blues__Grovy_.mp3"
+                    "file": "static/pack/packab93ecfb/Jazzy.mp3"
                 },
                 {
                     "title": "Sayonara 140 BPM A# Min (Bouncy, Energetic, Synth)",
                     "id": "trk_packab93ecfb_fa1c4558",
-                    "file": "static/pack/packab93ecfb/_zeyonthebeat_-_Sayonara_140_BPM_A__Min__Bouncy__Energetic__Synth_.mp3"
+                    "file": "static/pack/packab93ecfb/Sayonara.mp3"
                 },
                 {
                     "title": "Sinos 130 BPM C Min (Ambient, Arp, Guitar)",
                     "id": "trk_packab93ecfb_02aa2aec",
-                    "file": "static/pack/packab93ecfb/_zeyonthebeat_-_Sinos_130_BPM_C_Min__Ambient__Arp__Guitar_.mp3"
+                    "file": "static/pack/packab93ecfb/Sinos.mp3"
                 },
                 {
                     "title": "SWA 140 BPM D# Min (Synth, Arp, Energetic)",
                     "id": "trk_packab93ecfb_ca5c8a44",
-                    "file": "static/pack/packab93ecfb/_zeyonthebeat_-_SWA_140_BPM_D__Min__Synth__Arp__Energetic_.mp3"
+                    "file": "static/pack/packab93ecfb/SWA.mp3"
                 },
                 {
                     "title": "Toravu~isu Sukotto 135 BPM G Min (Synth, Hard)",
                     "id": "trk_packab93ecfb_99e4f0e7",
-                    "file": "static/pack/packab93ecfb/_zeyonthebeat_-_Toravu_isu_Sukotto_135_BPM_G_Min__Synth__Hard_.mp3"
+                    "file": "static/pack/packab93ecfb/Toravuisu Sukotto.mp3"
                 },
                 {
                     "title": "Vozes 128 BPM B Min (Ambient, Dark, Synth)",
                     "id": "trk_packab93ecfb_8bb3caa8",
-                    "file": "static/pack/packab93ecfb/_zeyonthebeat_-_Vozes_128_BPM_B_Min__Ambient__Dark__Synth_.mp3"
+                    "file": "static/pack/packab93ecfb/Vozes.mp3"
                 }
             ]
         }
