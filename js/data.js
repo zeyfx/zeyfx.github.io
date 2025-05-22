@@ -291,8 +291,8 @@ const beatData = {
             "author": "zey",
             "description": "Samples de Março, com licença de uso NÃO exclusivo e stems inclusos.",
             "price": 99.99,
-            "discount": 50,
-            "cover": "",
+            "discount": 90,
+            "cover": "static/cover/março.png",
             "tracks": [
                 {
                     "title": "Come Over 130 BPM C# Min (Energetic, Synth, Vocal Chop)",
