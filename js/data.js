@@ -287,7 +287,7 @@ const beatData = {
         },
         {
             "id": "packab93ecfb",
-            "name": "Samples 03.05",
+            "name": "Samples 03.25",
             "author": "zey",
             "description": "Samples de Março, com licença de uso NÃO exclusivo e stems inclusos.",
             "price": 99.99,
@@ -345,6 +345,67 @@ const beatData = {
                     "file": "static/pack/packab93ecfb/Vozes.mp3"
                 }
             ]
+        },
+        {
+            "id": "packba909888",
+            "name": "Samples 04.25",
+            "author": "zey",
+            "description": "",
+            "price": 99.99,
+            "discount": 90,
+            "cover": "static/cover/Abril.png",
+            "tracks": [
+                {
+                    "title": "Alucard 120 BPM D Min (Dark, Piano, Synth)",
+                    "id": "trk_packba909888_4dd7451d",
+                    "file": "static/pack/packba909888/Alucard.wav"
+                },
+                {
+                    "title": "Cowboy 84 BPM D# Min (Guitar, Brass, Latin)",
+                    "id": "trk_packba909888_6318ec6b",
+                    "file": "static/pack/packba909888/Cowboy.wav"
+                },
+                {
+                    "title": "Ecos 98 BPM C Min (Ambient, Piano, Vocals)",
+                    "id": "trk_packba909888_de9b4134",
+                    "file": "static/pack/packba909888/Ecos.wav"
+                },
+                {
+                    "title": "HardCandy.wav",
+                    "id": "trk_packba909888_c5744deb",
+                    "file": "static/pack/packba909888/HardCandy.wav"
+                },
+                {
+                    "title": "Hard Candy 120 BPM D min (Synth, Vocal, Analog)",
+                    "id": "trk_packba909888_c5744deb",
+                    "file": "static/pack/packba909888/Noir.wav"
+                },
+                {
+                    "title": "Old 145 BPM D Min (Synth, Vocal, Analog)",
+                    "id": "trk_packba909888_3ac2bda5",
+                    "file": "static/pack/packba909888/Old.wav"
+                },
+                {
+                    "title": "Retro 134 BPM F# Min (Synth, Dark, Energetico)",
+                    "id": "trk_packba909888_3ac2bda5",
+                    "file": "static/pack/packba909888/Retro.wav"
+                },
+                {
+                    "title": "Voca~loid 96 BPM A# Min (Guitar, Vocal, Synth)",
+                    "id": "trk_packba909888_3f0b1a2c",
+                    "file": "static/pack/packba909888/Voca~loid.wav"
+                },
+                {
+                    "title": "Whistle 140 BPM A Min (Guitar, Vocal, Flute)",
+                    "id": "trk_packba909888_4d5e6f8b",
+                    "file": "static/pack/packba909888/Whistle.wav"
+                },
+                {
+                    "title": "Wrap 140 BPM A Min (Analog, Synth, Sequencer)",
+                    "id": "trk_packba909888_8bb3caa8",
+                    "file": "static/pack/packba909888/Wrap.wav"
+                }
+            ]
         }
     ]
-}
+};

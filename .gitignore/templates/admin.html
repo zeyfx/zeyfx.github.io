@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Catálogo Zey</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_admin.css') }}">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #16181d; color: #cbd5e1; } /* Fundo um pouco mais suave */
+        .container { max-width: 1280px; } /* Aumenta um pouco o container geral */
+        
+        /* Inputs e Textareas */
+        input[type="text"], input[type="number"], input[type="file"], textarea, select { 
+            background-color: #1e2127; 
+            border: 1px solid #374151; /* Cinza mais escuro para borda */
+            color: #e5e7eb; 
+            border-radius: 0.375rem;
+            padding: 0.65rem 0.75rem; /* Padding ajustado */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, input[type="file"]:focus, textarea:focus, select:focus { 
+            border-color: #6366f1; /* Roxo índigo para foco */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3); 
+            outline: none;
+        }
+        input[type="checkbox"] { accent-color: #6366f1; }
+
+        label { margin-bottom: 0.35rem; display: block; font-size: 0.875rem; color: #9ca3af; font-weight: 500;}
+        
+        /* Botões */
+        .btn { 
+            padding: 0.6rem 1.2rem; 
+            border-radius: 0.375rem; 
+            font-weight: 600; /* Um pouco mais bold */
+            transition: all 0.2s ease-in-out; 
+            display: inline-flex; /* Para alinhar ícones se houver */
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 1px solid transparent; /* Para consistência no hover */
+        }
+        .btn-primary { background-color: #4f46e5; color: white; }
+        .btn-primary:hover { background-color: #4338ca; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .btn-secondary { background-color: #374151; color: #e5e7eb; border-color: #4b5563;}
+        .btn-secondary:hover { background-color: #4b5563; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .btn-danger { background-color: #ef4444; color: white; }
+        .btn-danger:hover { background-color: #dc2626; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        .btn-sm { padding: 0.35rem 0.85rem; font-size: 0.875rem; font-weight: 500; }
+        .btn-icon { padding: 0.5rem; } /* Para botões só com ícone */
+
+        /* Cards */
+        .card { 
+            background-color: #1e2127; /* Tom um pouco diferente do body */
+            border: 1px solid #374151; 
+            border-radius: 0.5rem; 
+            padding: 1.5rem; 
+            margin-bottom: 1.5rem; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); /* Sombra sutil */
+        }
+        .form-section-card { /* Card específico para formulários */
+            background-color: #252a33; /* Um pouco mais claro para destacar o form */
+            padding: 2rem;
+        }
+        
+        .image-preview-container { margin-top: 0.5rem; }
+        .image-preview { max-width: 120px; max-height: 120px; border-radius: 0.375rem; object-fit: cover; border: 1px solid #4b5563; background-color: #374151;}
+        .audio-preview-container { margin-top: 0.5rem; }
+        .audio-preview { width: 100%; max-width: 320px; height: 45px; } 
+        .file-name-display { font-size: 0.8rem; color: #9ca3af; margin-top: 4px; display: block; font-style: italic; }
+
+        .item-listing {
+            display: flex;
+            flex-direction: column; /* Empilha em mobile */
+            justify-content: space-between;
+            align-items: flex-start; /* Alinha à esquerda em mobile */
+            gap: 0.75rem; /* Espaço entre blocos de info e botões em mobile */
+        }
+        @media (min-width: 640px) { /* sm e acima */
+            .item-listing {
+                flex-direction: row;
+                align-items: center;
+                gap: 1rem;
+            }
+        }
+        .item-listing-info { display: flex; align-items: center; flex-grow: 1; min-width: 0; /* Para truncate funcionar */ }
+        .item-listing-cover { width: 60px; height: 60px; object-fit: cover; border-radius: 0.375rem; margin-right: 1rem; border: 1px solid #4b5563; background-color: #374151; }
+        .item-listing-details h4 { color: #f3f4f6; }
+        .item-listing-details p { color: #9ca3af; }
+        .item-listing-actions { flex-shrink: 0; display: flex; gap: 0.5rem; width: 100%; justify-content: flex-end; }
+         @media (min-width: 640px) { /* sm e acima */
+            .item-listing-actions { width: auto; }
+        }
+
+        .listen-btn { background-color: #3b82f6; color: white; }
+        .listen-btn:hover { background-color: #2563eb; }
+        #global-preview-player-container { border: 1px solid #374151; }
+
+        /* Títulos das seções */
+        .section-title {
+            font-size: 1.75rem; /* text-2xl é 1.5rem, um pouco maior */
+            font-weight: 600;
+            color: #e5e7eb;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #4b5563;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="container mx-auto">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold text-indigo-400 tracking-tight">Painel de Gerenciamento</h1>
+            <p class="text-lg text-gray-400 mt-1">Gerencie seu catálogo de beats e pacotes.</p>
+        </header>
+
+        <!-- Player de Áudio Global para Previews da Lista -->
+        <div id="global-preview-player-container" class="my-6 p-4 bg-gray-800 rounded-lg shadow-lg hidden">
+            <p class="text-md font-medium text-indigo-300 mb-2">Preview: <span id="global-preview-title" class="text-gray-200"></span></p>
+            <audio id="global-preview-audio" controls class="w-full h-12"></audio>
+        </div>
+
+
+        <!-- Seção de Beats -->
+        <section id="beats-section" class="mb-12">
+            <div class="section-title">
+                <h2>Beats</h2>
+                <button id="show-add-beat-form" class="btn btn-primary btn-sm"><i class="fas fa-plus mr-2"></i>Adicionar Beat</button>
+            </div>
+            
+            <div id="add-beat-form-container" class="card form-section-card hidden mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-semibold text-gray-100">Adicionar/Editar Beat</h3>
+                    <button id="close-add-beat-form" class="text-gray-400 hover:text-white text-2xl">×</button>
+                </div>
+                <form id="beat-form" enctype="multipart/form-data">
+                    <input type="hidden" id="edit-beat-id" name="editBeatId">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                        <div><label for="beat-title">Título:</label><input type="text" id="beat-title" name="title" class="w-full" required></div>
+                        <div><label for="beat-author">Autor(es) (separado por vírgula):</label><input type="text" id="beat-author" name="author" class="w-full"></div>
+                        <div><label for="beat-bpm">BPM:</label><input type="number" id="beat-bpm" name="bpm" class="w-full" required></div>
+                        <div><label for="beat-key">Tom:</label><input type="text" id="beat-key" name="key" class="w-full"></div>
+                        <div><label for="beat-genre">Gênero(s) (separado por vírgula):</label><input type="text" id="beat-genre" name="genre" class="w-full"></div>
+                        <div><label for="beat-tags">Tags (separado por vírgula):</label><input type="text" id="beat-tags" name="tags" class="w-full"></div>
+                        <div><label for="beat-price">Preço:</label><input type="number" step="0.01" id="beat-price" name="price" class="w-full" required></div>
+                        <div><label for="beat-discount">Desconto (%):</label><input type="number" id="beat-discount" name="discount" value="0" class="w-full"></div>
+                        
+                        <div class="md:col-span-1">
+                            <label for="beat-file">Arquivo de Áudio (.mp3, .wav):</label>
+                            <input type="file" id="beat-file" name="beatFile" accept=".mp3,.wav,.aac,.ogg" class="w-full">
+                            <span id="current-beat-file" class="file-name-display"></span>
+                            <div class="audio-preview-container mt-2 hidden">
+                                <audio id="beat-file-preview" controls class="audio-preview"></audio>
+                            </div>
+                        </div>
+                        <div class="md:col-span-1">
+                            <label for="beat-cover">Capa (.png, .jpg, .jpeg, .webp):</label>
+                            <input type="file" id="beat-cover" name="beatCover" accept="image/*" class="w-full">
+                            <span id="current-beat-cover" class="file-name-display"></span>
+                            <div class="image-preview-container">
+                                <img id="beat-cover-preview" class="image-preview hidden" alt="Preview da capa">
+                            </div>
+                        </div>
+                        <div class="md:col-span-2 flex items-center pt-2"><input type="checkbox" id="beat-exclusive" name="exclusive" class="mr-2 h-5 w-5"><label for="beat-exclusive" class="mb-0 text-gray-200">Exclusivo?</label></div>
+                    </div>
+                    <div class="mt-6 flex gap-3">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-2"></i>Salvar Beat</button>
+                        <button type="button" id="cancel-edit-beat" class="btn btn-secondary"><i class="fas fa-times mr-2"></i>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            <div id="beats-list" class="space-y-4">
+                <!-- Beats listados aqui -->
+            </div>
+        </section>
+
+        <!-- Seção de Pacotes -->
+        <section id="packs-section" class="mb-12">
+             <div class="section-title">
+                <h2>Pacotes</h2>
+                <button id="show-add-pack-form" class="btn btn-primary btn-sm"><i class="fas fa-plus mr-2"></i>Adicionar Pacote</button>
+            </div>
+            <div id="add-pack-form-container" class="card form-section-card hidden mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-semibold text-gray-100">Adicionar/Editar Pacote</h3>
+                    <button id="close-add-pack-form" class="text-gray-400 hover:text-white text-2xl">×</button>
+                </div>
+                <form id="pack-form" enctype="multipart/form-data">
+                    <input type="hidden" id="edit-pack-id" name="editPackId">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                        <div><label for="pack-name">Nome do Pacote:</label><input type="text" id="pack-name" name="packName" class="w-full" required></div>
+                        <div><label for="pack-author">Autor do Pacote:</label><input type="text" id="pack-author" name="packAuthor" class="w-full"></div>
+                        <div class="md:col-span-2"><label for="pack-description">Descrição:</label><textarea id="pack-description" name="packDescription" class="w-full" rows="3"></textarea></div>
+                        <div><label for="pack-price">Preço:</label><input type="number" step="0.01" id="pack-price" name="packPrice" class="w-full" required></div>
+                        <div><label for="pack-discount">Desconto (%):</label><input type="number" id="pack-discount" name="packDiscount" value="0" class="w-full"></div>
+                        <div><label for="pack-bpm">BPM Padrão (Opcional):</label><input type="number" id="pack-bpm" name="packBPM" class="w-full"></div>
+                        <div class="md:col-span-2">
+                            <label for="pack-cover">Capa do Pacote (.png, .jpg, .jpeg, .webp):</label>
+                            <input type="file" id="pack-cover" name="packCover" accept="image/*" class="w-full">
+                            <span id="current-pack-cover" class="file-name-display"></span>
+                             <div class="image-preview-container">
+                                <img id="pack-cover-preview" class="image-preview hidden" alt="Preview capa pacote">
+                            </div>
+                        </div>
+                    </div>
+                    <h4 class="text-xl font-semibold mt-8 mb-3 text-gray-200 border-t border-gray-700 pt-4">Faixas do Pacote</h4>
+                    <div id="pack-tracks-container" class="space-y-5">
+                        <!-- Faixas adicionadas aqui -->
+                    </div>
+                    <button type="button" id="add-pack-track-field" class="btn btn-secondary mt-4 text-sm"><i class="fas fa-plus-circle mr-2"></i>Adicionar Faixa ao Pacote</button>
+                    <div class="mt-8 flex gap-3">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-2"></i>Salvar Pacote</button>
+                        <button type="button" id="cancel-edit-pack" class="btn btn-secondary"><i class="fas fa-times mr-2"></i>Cancelar</button>
+                    </div>
+                </form>
+            </div>
+            <div id="packs-list" class="space-y-4">
+                 <!-- Pacotes listados aqui -->
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const beatsList = document.getElementById('beats-list');
+            const packsList = document.getElementById('packs-list');
+            
+            const beatFormEl = document.getElementById('beat-form'); // Renomeado para evitar conflito com variável 'beatForm'
+            const packFormEl = document.getElementById('pack-form'); // Renomeado
+            
+            const showAddBeatFormBtn = document.getElementById('show-add-beat-form');
+            const addBeatFormContainer = document.getElementById('add-beat-form-container');
+            const cancelEditBeatBtn = document.getElementById('cancel-edit-beat');
+            const closeAddBeatFormBtn = document.getElementById('close-add-beat-form');
+
+
+            const showAddPackFormBtn = document.getElementById('show-add-pack-form');
+            const addPackFormContainer = document.getElementById('add-pack-form-container');
+            const addPackTrackFieldBtn = document.getElementById('add-pack-track-field');
+            const packTracksContainer = document.getElementById('pack-tracks-container');
+            const cancelEditPackBtn = document.getElementById('cancel-edit-pack');
+            const closeAddPackFormBtn = document.getElementById('close-add-pack-form');
+
+            const globalPreviewPlayerContainer = document.getElementById('global-preview-player-container');
+            const globalPreviewAudio = document.getElementById('global-preview-audio');
+            const globalPreviewTitle = document.getElementById('global-preview-title');
+
+            let currentData = { beats: [], packs: [] };
+
+            function setupFilePreview(fileInput, previewElement, currentFileDisplaySpan, isAudio = false) {
+                if (!fileInput || !previewElement) return;
+                fileInput.addEventListener('change', function(event) {
+                    const file = event.target.files[0];
+                    if (currentFileDisplaySpan) currentFileDisplaySpan.textContent = ''; 
+                    
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            previewElement.src = e.target.result;
+                            if (!isAudio) { 
+                                previewElement.classList.remove('hidden');
+                            } else { 
+                                previewElement.parentElement.classList.remove('hidden');
+                                previewElement.load(); 
+                            }
+                        }
+                        if ((isAudio && file.type.startsWith('audio/')) || (!isAudio && file.type.startsWith('image/'))) {
+                            reader.readAsDataURL(file);
+                        } else {
+                            previewElement.src = '#';
+                            if (!isAudio) previewElement.classList.add('hidden');
+                            else previewElement.parentElement.classList.add('hidden');
+                            if (currentFileDisplaySpan) currentFileDisplaySpan.textContent = 'Tipo de arquivo inválido.';
+                        }
+                    } else {
+                        previewElement.src = '#';
+                        if (!isAudio) previewElement.classList.add('hidden');
+                        else previewElement.parentElement.classList.add('hidden');
+                    }
+                });
+            }
+
+            setupFilePreview(document.getElementById('beat-file'), document.getElementById('beat-file-preview'), document.getElementById('current-beat-file'), true);
+            setupFilePreview(document.getElementById('beat-cover'), document.getElementById('beat-cover-preview'), document.getElementById('current-beat-cover'), false);
+            setupFilePreview(document.getElementById('pack-cover'), document.getElementById('pack-cover-preview'), document.getElementById('current-pack-cover'), false);
+
+            async function fetchData() {
+                try {
+                    const response = await fetch('/get_data');
+                    if (!response.ok) throw new Error(`Falha ao buscar dados: ${response.statusText}`);
+                    currentData = await response.json();
+                    renderBeats();
+                    renderPacks();
+                } catch (error) {
+                    console.error("Erro ao buscar dados:", error);
+                    alert("Não foi possível carregar os dados do catálogo: " + error.message);
+                }
+            }
+
+            function playGlobalPreview(filePath, title) {
+                if (globalPreviewAudio && globalPreviewPlayerContainer && globalPreviewTitle) {
+                    globalPreviewTitle.textContent = title;
+                    // Adiciona um timestamp para evitar cache se o arquivo for substituído com o mesmo nome
+                    globalPreviewAudio.src = `/${filePath}?t=${new Date().getTime()}`; 
+                    globalPreviewPlayerContainer.classList.remove('hidden');
+                    globalPreviewAudio.play().catch(e => console.error("Erro ao tocar preview:", e));
+                    globalPreviewPlayerContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+
+            function renderBeats() {
+                if (!beatsList || !currentData.beats) return;
+                beatsList.innerHTML = '';
+                if (currentData.beats.length === 0) {
+                    beatsList.innerHTML = '<p class="text-gray-500 italic">Nenhum beat cadastrado ainda.</p>';
+                    return;
+                }
+                currentData.beats.forEach(beat => {
+                    const div = document.createElement('div');
+                    div.className = 'card item-listing';
+                    const coverSrc = beat.cover ? `/${beat.cover}?t=${new Date().getTime()}` : 'https://via.placeholder.com/60/1e2127/9ca3af?text=SemCapa';
+                    div.innerHTML = `
+                        <div class="item-listing-info">
+                            <img src="${coverSrc}" alt="${beat.title}" class="item-listing-cover">
+                            <div class="item-listing-details">
+                                <h4 class="text-lg font-semibold">${beat.title} <span class="text-xs text-gray-500">(ID: ${beat.id})</span></h4>
+                                <p class="text-sm">${Array.isArray(beat.author) ? beat.author.join(', ') : beat.author} - ${beat.bpm} BPM</p>
+                                ${beat.file ? `<button class="btn btn-sm listen-btn mt-1 listen-item" data-file="${beat.file}" data-title="${beat.title}"><i class="fas fa-play mr-1"></i> Ouvir</button>` : '<p class="text-xs text-red-400 mt-1">Áudio não definido</p>'}
+                            </div>
+                        </div>
+                        <div class="item-listing-actions">
+                            <button class="btn btn-secondary btn-sm edit-beat" data-id="${beat.id}"><i class="fas fa-edit mr-1"></i>Editar</button>
+                            <button class="btn btn-danger btn-sm delete-beat" data-id="${beat.id}"><i class="fas fa-trash-alt mr-1"></i>Remover</button>
+                        </div>
+                    `;
+                    beatsList.appendChild(div);
+                });
+                addBeatEventListeners();
+            }
+
+            function renderPacks() {
+                if (!packsList || !currentData.packs) return;
+                packsList.innerHTML = '';
+                 if (currentData.packs.length === 0) {
+                    packsList.innerHTML = '<p class="text-gray-500 italic">Nenhum pacote cadastrado ainda.</p>';
+                    return;
+                }
+                currentData.packs.forEach(pack => {
+                    const div = document.createElement('div');
+                    div.className = 'card item-listing';
+                    const coverSrc = pack.cover ? `/${pack.cover}?t=${new Date().getTime()}` : 'https://via.placeholder.com/60/1e2127/9ca3af?text=SemCapa';
+                    div.innerHTML = `
+                        <div class="item-listing-info">
+                             <img src="${coverSrc}" alt="${pack.name}" class="item-listing-cover">
+                            <div class="item-listing-details">
+                                <h4 class="text-lg font-semibold">${pack.name} <span class="text-xs text-gray-500">(ID: ${pack.id})</span></h4>
+                                <p class="text-sm">${pack.tracks.length} itens. ${pack.description ? pack.description.substring(0,50) + (pack.description.length > 50 ? '...' : '') : 'Sem descrição.'}</p>
+                                ${pack.tracks.length > 0 && pack.tracks[0].file ? `<button class="btn btn-sm listen-btn mt-1 listen-item" data-file="${pack.tracks[0].file}" data-title="${pack.tracks[0].title} (do pacote ${pack.name})"><i class="fas fa-play mr-1"></i> Ouvir 1ª Faixa</button>` : ''}
+                            </div>
+                        </div>
+                        <div class="item-listing-actions">
+                            <button class="btn btn-secondary btn-sm edit-pack" data-id="${pack.id}"><i class="fas fa-edit mr-1"></i>Editar</button>
+                            <button class="btn btn-danger btn-sm delete-pack" data-id="${pack.id}"><i class="fas fa-trash-alt mr-1"></i>Remover</button>
+                        </div>
+                    `;
+                    packsList.appendChild(div);
+                });
+                addPackEventListeners();
+            }
+            
+            function toggleFormVisibility(formContainer, showFormBtn, cancelBtn, show) {
+                if (show) {
+                    formContainer.classList.remove('hidden');
+                    showFormBtn.classList.add('hidden'); // Esconde o botão "Adicionar Novo"
+                    if (cancelBtn) cancelBtn.classList.remove('hidden'); // Mostra o botão "Cancelar" do formulário
+                } else {
+                    formContainer.classList.add('hidden');
+                    showFormBtn.classList.remove('hidden'); // Mostra o botão "Adicionar Novo"
+                    if (cancelBtn) cancelBtn.classList.add('hidden');
+                }
+            }
+
+            function resetBeatForm() {
+                if(beatFormEl) beatFormEl.reset();
+                const editIdField = document.getElementById('edit-beat-id');
+                if(editIdField) editIdField.value = '';
+                
+                toggleFormVisibility(addBeatFormContainer, showAddBeatFormBtn, cancelEditBeatBtn, false);
+
+                const coverPreview = document.getElementById('beat-cover-preview');
+                if(coverPreview) { coverPreview.classList.add('hidden'); coverPreview.src = '#'; }
+                const audioPreviewContainer = document.querySelector('#beat-file-preview')?.parentElement; // Mais seguro
+                if(audioPreviewContainer) audioPreviewContainer.classList.add('hidden');
+                const audioPreview = document.getElementById('beat-file-preview');
+                if(audioPreview) audioPreview.src = '';
+
+                const currentFile = document.getElementById('current-beat-file');
+                if(currentFile) currentFile.textContent = '';
+                const currentCover = document.getElementById('current-beat-cover');
+                if(currentCover) currentCover.textContent = '';
+            }
+
+            function resetPackForm() {
+                if(packFormEl) packFormEl.reset();
+                const editIdField = document.getElementById('edit-pack-id');
+                if(editIdField) editIdField.value = '';
+                if(packTracksContainer) packTracksContainer.innerHTML = '';
+                
+                toggleFormVisibility(addPackFormContainer, showAddPackFormBtn, cancelEditPackBtn, false);
+
+                const coverPreview = document.getElementById('pack-cover-preview');
+                 if(coverPreview) { coverPreview.classList.add('hidden'); coverPreview.src = '#'; }
+                const currentCover = document.getElementById('current-pack-cover');
+                if(currentCover) currentCover.textContent = '';
+            }
+
+            if (showAddBeatFormBtn) {
+                showAddBeatFormBtn.addEventListener('click', () => {
+                    resetBeatForm(); // Garante que o formulário está limpo
+                    toggleFormVisibility(addBeatFormContainer, showAddBeatFormBtn, cancelEditBeatBtn, true);
+                    addBeatFormContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            }
+            if (cancelEditBeatBtn) cancelEditBeatBtn.addEventListener('click', resetBeatForm);
+            if (closeAddBeatFormBtn) closeAddBeatFormBtn.addEventListener('click', resetBeatForm);
+
+
+            if (showAddPackFormBtn) {
+                showAddPackFormBtn.addEventListener('click', () => {
+                    resetPackForm();
+                    toggleFormVisibility(addPackFormContainer, showAddPackFormBtn, cancelEditPackBtn, true);
+                    addTrackFieldToPackForm(); 
+                    addPackFormContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            }
+            if (cancelEditPackBtn) cancelEditPackBtn.addEventListener('click', resetPackForm);
+            if (closeAddPackFormBtn) closeAddPackFormBtn.addEventListener('click', resetPackForm);
+
+
+            if (beatFormEl) {
+                beatFormEl.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    const formData = new FormData(this);
+                    const beatId = document.getElementById('edit-beat-id').value;
+                    const url = beatId ? `/edit_beat/${beatId}` : '/add_beat';
+                    
+                    try {
+                        const response = await fetch(url, { method: 'POST', body: formData });
+                        const result = await response.json();
+                        alert(result.message);
+                        if (result.success) {
+                            fetchData(); 
+                            resetBeatForm();
+                        }
+                    } catch (error) {
+                        console.error("Erro ao salvar beat:", error);
+                        alert("Erro ao salvar beat. Verifique o console.");
+                    }
+                });
+            }
+            
+            document.body.addEventListener('click', function(event) {
+                const target = event.target.closest('.listen-item');
+                if (target) {
+                    const filePath = target.dataset.file;
+                    const title = target.dataset.title;
+                    if (filePath) {
+                        playGlobalPreview(filePath, title);
+                    }
+                }
+            });
+
+            function addBeatEventListeners() {
+                document.querySelectorAll('.edit-beat').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const beatId = this.dataset.id;
+                        const beat = currentData.beats.find(b => b.id === beatId);
+                        if (beat) {
+                            resetBeatForm();
+                            toggleFormVisibility(addBeatFormContainer, showAddBeatFormBtn, cancelEditBeatBtn, true);
+                            
+                            document.getElementById('edit-beat-id').value = beat.id;
+                            document.getElementById('beat-title').value = beat.title || '';
+                            document.getElementById('beat-author').value = Array.isArray(beat.author) ? beat.author.join(', ') : (beat.author || '');
+                            document.getElementById('beat-bpm').value = beat.bpm || '';
+                            document.getElementById('beat-key').value = beat.key || '';
+                            document.getElementById('beat-genre').value = Array.isArray(beat.genre) ? beat.genre.join(', ') : (beat.genre || '');
+                            document.getElementById('beat-tags').value = Array.isArray(beat.tags) ? beat.tags.join(', ') : (beat.tags || '');
+                            document.getElementById('beat-price').value = beat.price || 0;
+                            document.getElementById('beat-discount').value = beat.discount || 0;
+                            document.getElementById('beat-exclusive').checked = beat.exclusive || false;
+                            
+                            document.getElementById('current-beat-file').textContent = beat.file ? `Atual: ${beat.file.split('/').pop()}` : 'Nenhum arquivo de áudio atual.';
+                            const coverPreview = document.getElementById('beat-cover-preview');
+                            if (beat.cover) {
+                                coverPreview.src = `/${beat.cover}?t=${new Date().getTime()}`; 
+                                coverPreview.classList.remove('hidden');
+                                document.getElementById('current-beat-cover').textContent = `Atual: ${beat.cover.split('/').pop()}`;
+                            } else {
+                                coverPreview.classList.add('hidden');
+                                coverPreview.src = '#';
+                                document.getElementById('current-beat-cover').textContent = 'Nenhuma capa atual.';
+                            }
+                            addBeatFormContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.delete-beat').forEach(button => {
+                    button.addEventListener('click', async function() {
+                        const beatId = this.dataset.id;
+                        if (confirm('Tem certeza que deseja remover este beat?')) {
+                            try {
+                                const response = await fetch(`/delete_beat/${beatId}`, { method: 'POST' });
+                                const result = await response.json();
+                                alert(result.message);
+                                if (result.success) fetchData();
+                            } catch (error) {
+                                console.error("Erro ao remover beat:", error);
+                                alert("Erro ao remover beat.");
+                            }
+                        }
+                    });
+                });
+            }
+
+            function addTrackFieldToPackForm(track = null, index = 0) {
+                if (!packTracksContainer) return;
+                const div = document.createElement('div');
+                div.className = 'p-4 border border-gray-700 rounded-md mt-3 relative bg-gray-800 shadow-sm'; // Melhor estilização
+                const uniqueIdSuffix = Date.now() + '_' + index;
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <h5 class="text-md font-medium text-indigo-300">Faixa ${packTracksContainer.children.length + 1}</h5>
+                        <button type="button" class="remove-pack-track-field text-red-400 hover:text-red-300 text-xl font-bold" title="Remover Faixa">×</button>
+                    </div>
+                    <input type="hidden" name="originalTrackFile[]" value="${track && track.file ? track.file : ''}">
+                    <input type="hidden" name="originalTrackId[]" value="${track && track.id ? track.id : ''}">
+                    <div class="mb-3"><label for="trackTitle_${uniqueIdSuffix}">Título da Faixa:</label><input type="text" id="trackTitle_${uniqueIdSuffix}" name="trackTitle[]" class="w-full p-1.5 rounded text-sm" value="${track ? track.title : ''}" required></div>
+                    <div class="mt-2">
+                        <label for="trackFile_${uniqueIdSuffix}">Arquivo da Faixa (.mp3, .wav):</label>
+                        <input type="file" id="trackFile_${uniqueIdSuffix}" name="trackFile[]" accept=".mp3,.wav,.aac,.ogg" class="w-full p-1.5 rounded text-sm border border-gray-600">
+                        ${track && track.file ? `<span class="file-name-display current-track-file">Atual: ${track.file.split('/').pop()}</span>` : ''}
+                        <div class="audio-preview-container mt-2 hidden">
+                            <audio id="trackFilePreview_${uniqueIdSuffix}" controls class="audio-preview"></audio>
+                        </div>
+                    </div>
+                `;
+                packTracksContainer.appendChild(div);
+                
+                setupFilePreview(document.getElementById(`trackFile_${uniqueIdSuffix}`), document.getElementById(`trackFilePreview_${uniqueIdSuffix}`), div.querySelector('.current-track-file'), true);
+
+                div.querySelector('.remove-pack-track-field').addEventListener('click', function() {
+                    this.parentElement.remove();
+                    packTracksContainer.querySelectorAll('h5').forEach((h5, idx) => {
+                        h5.textContent = `Faixa ${idx + 1}`;
+                    });
+                });
+            }
+
+
+            if (addPackTrackFieldBtn) {
+                addPackTrackFieldBtn.addEventListener('click', () => addTrackFieldToPackForm(null, packTracksContainer.children.length));
+            }
+
+            if (packFormEl) {
+                packFormEl.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(this);
+                    const packId = document.getElementById('edit-pack-id').value;
+                    const url = packId ? `/edit_pack/${packId}` : '/add_pack';
+
+                    try {
+                        const response = await fetch(url, { method: 'POST', body: formData });
+                        const result = await response.json();
+                        alert(result.message);
+                        if (result.success) {
+                            fetchData();
+                            resetPackForm();
+                        }
+                    } catch (error) {
+                        console.error("Erro ao salvar pacote:", error);
+                        alert("Erro ao salvar pacote.");
+                    }
+                });
+            }
+
+            function addPackEventListeners() {
+                 document.querySelectorAll('.edit-pack').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const packId = this.dataset.id;
+                        const pack = currentData.packs.find(p => p.id === packId);
+                        if (pack) {
+                            resetPackForm();
+                            toggleFormVisibility(addPackFormContainer, showAddPackFormBtn, cancelEditPackBtn, true);
+
+                            document.getElementById('edit-pack-id').value = pack.id;
+                            document.getElementById('pack-name').value = pack.name || '';
+                            document.getElementById('pack-author').value = pack.author || '';
+                            document.getElementById('pack-description').value = pack.description || '';
+                            document.getElementById('pack-price').value = pack.price || 0;
+                            document.getElementById('pack-discount').value = pack.discount || 0;
+                            document.getElementById('pack-bpm').value = pack.bpm || '';
+
+                            const packCoverPreview = document.getElementById('pack-cover-preview');
+                            if (pack.cover) {
+                                packCoverPreview.src = `/${pack.cover}?t=${new Date().getTime()}`;
+                                packCoverPreview.classList.remove('hidden');
+                                document.getElementById('current-pack-cover').textContent = `Atual: ${pack.cover.split('/').pop()}`;
+                            } else {
+                                packCoverPreview.classList.add('hidden');
+                                packCoverPreview.src = '#';
+                                 document.getElementById('current-pack-cover').textContent = 'Nenhuma capa atual.';
+                            }
+                            
+                            packTracksContainer.innerHTML = ''; 
+                            if(pack.tracks && pack.tracks.length > 0) {
+                                pack.tracks.forEach((track, index) => addTrackFieldToPackForm(track, index));
+                            } else {
+                                addTrackFieldToPackForm(); // Adiciona um campo vazio se não houver faixas
+                            }
+                            addPackFormContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    });
+                });
+                document.querySelectorAll('.delete-pack').forEach(button => {
+                    button.addEventListener('click', async function() {
+                        const packId = this.dataset.id;
+                        if (confirm('Tem certeza que deseja remover este pacote? Isso também removerá sua pasta de áudios.')) {
+                             try {
+                                const response = await fetch(`/delete_pack/${packId}`, { method: 'POST' });
+                                const result = await response.json();
+                                alert(result.message);
+                                if (result.success) fetchData();
+                            } catch (error) {
+                                console.error("Erro ao remover pacote:", error);
+                                alert("Erro ao remover pacote.");
+                            }
+                        }
+                    });
+                });
+            }
+            
+            fetchData();
+        });
+    </script>
+</body>
+</html>
