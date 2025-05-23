@@ -350,7 +350,7 @@ const beatData = {
             "id": "packba909888",
             "name": "Samples 04.25",
             "author": "zey",
-            "description": "",
+            "description": "Samples de Abril, com licença de uso NÃO exclusivo e stems inclusos.",
             "price": 99.99,
             "discount": 90,
             "cover": "static/cover/Abril.png",
@@ -371,12 +371,12 @@ const beatData = {
                     "file": "static/pack/packba909888/Ecos.wav"
                 },
                 {
-                    "title": "HardCandy.wav",
+                    "title": "Hard Candy 120 BPM D min (Synth, Vocal, Analog)",
                     "id": "trk_packba909888_c5744deb",
                     "file": "static/pack/packba909888/HardCandy.wav"
                 },
                 {
-                    "title": "Hard Candy 120 BPM D min (Synth, Vocal, Analog)",
+                    "title": "Noir 106 BPM A# Min (Piano, Melodic, Jazzy)",
                     "id": "trk_packba909888_c5744deb",
                     "file": "static/pack/packba909888/Noir.wav"
                 },
